@@ -1,0 +1,6 @@
+{
+  "name": "南宫远区块链导航",
+  "description": "包含常用网站、AI导航、区块链导航、工具、交易所与友情链接的综合导航站点",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
