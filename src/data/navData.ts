@@ -7,7 +7,7 @@ export const CATEGORIES_DATA: CategoryData[] = [
     icon: '🌐',
     items: [
       { title: '南宫远推特', url: 'https://x.com/nangongyuan/', desc: '南宫远的推特X账号' },
-      { title: '南宫远微博', url: 'https://weibo.com/7594643421', desc: '南宫远的官方微博' },
+      { title: '南宫远微博', url: 'https://weibo.com/u/6184008812', desc: '南宫远的官方微博' },
       { title: '微信公众号', url: 'https://mp.weixin.qq.com/', desc: '微信公众平台官网' },
       { title: '抖音', url: 'https://www.douyin.com/', desc: '抖音短视频平台' },
       { title: '哔哩哔哩', url: 'https://www.bilibili.com/', desc: '国内知名视频弹幕网站' },
