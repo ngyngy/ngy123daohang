@@ -16,6 +16,9 @@ export interface CryptoPrices {
   btcPrice: string;
   ethPrice: string;
   ethBtcPrice: string;
+  btcChange24h?: string;
+  ethChange24h?: string;
+  source?: string;
   lastUpdated?: Date;
   loading: boolean;
 }

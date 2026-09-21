@@ -27,9 +27,34 @@ export const Header: React.FC<HeaderProps> = ({
   const fetchPrices = async () => {
     try {
       setPrices((prev) => ({ ...prev, loading: true }));
+
+      // 1. First priority: Fetch via our server-side proxy /api/prices (No VPN required for users in China)
+      try {
+        const proxyRes = await fetch('/api/prices', { signal: AbortSignal.timeout(6000) });
+        if (proxyRes.ok) {
+          const json = await proxyRes.json();
+          if (json.success && json.data) {
+            setPrices({
+              btcPrice: json.data.btcPrice,
+              ethPrice: json.data.ethPrice,
+              ethBtcPrice: json.data.ethBtcPrice,
+              btcChange24h: json.data.btcChange24h,
+              ethChange24h: json.data.ethChange24h,
+              source: json.data.source || 'CoinGlass',
+              lastUpdated: new Date(),
+              loading: false,
+            });
+            return;
+          }
+        }
+      } catch {
+        // Fallback to direct client fetch if proxy is temporarily unreachable
+      }
+
+      // 2. Direct fallback (for overseas or local environments)
       const [btcRes, ethRes] = await Promise.all([
-        fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT'),
-        fetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT'),
+        fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT', { signal: AbortSignal.timeout(5000) }),
+        fetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT', { signal: AbortSignal.timeout(5000) }),
       ]);
 
       if (!btcRes.ok || !ethRes.ok) throw new Error('Network response failed');
@@ -61,6 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
         btcPrice: btcPriceStr,
         ethPrice: ethPriceStr,
         ethBtcPrice: ethBtcStr,
+        source: 'CoinGlass',
         lastUpdated: new Date(),
         loading: false,
       });
@@ -124,6 +150,17 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="font-bold text-amber-600 dark:text-amber-400">₿</span>
             <span className="font-semibold text-stone-600 dark:text-stone-300">BTC</span>
             <span className="font-medium">{prices.btcPrice}</span>
+            {prices.btcChange24h && (
+              <span
+                className={`text-[11px] font-medium px-1 rounded ${
+                  prices.btcChange24h.startsWith('+')
+                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                    : 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                }`}
+              >
+                {prices.btcChange24h}
+              </span>
+            )}
           </div>
 
           <div
@@ -136,6 +173,17 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="font-bold text-indigo-500 dark:text-indigo-400">Ξ</span>
             <span className="font-semibold text-stone-600 dark:text-stone-300">ETH</span>
             <span className="font-medium">{prices.ethPrice}</span>
+            {prices.ethChange24h && (
+              <span
+                className={`text-[11px] font-medium px-1 rounded ${
+                  prices.ethChange24h.startsWith('+')
+                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                    : 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                }`}
+              >
+                {prices.ethChange24h}
+              </span>
+            )}
           </div>
 
           <div
@@ -150,11 +198,22 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="font-medium">{prices.ethBtcPrice}</span>
           </div>
 
+          <a
+            href="https://www.coinglass.com/zh"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="点击前往 CoinGlass 查看深度衍生品与爆仓数据 (国内已通过服务代理直连，无需翻墙)"
+            className="hidden xl:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-lime-600/30 dark:border-lime-400/30 text-lime-800 dark:text-lime-300 hover:bg-black/5 dark:hover:bg-white/10 transition"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>CoinGlass数据</span>
+          </a>
+
           <button
             id="refresh-price-btn"
             onClick={fetchPrices}
-            title="刷新行情"
-            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-stone-500 dark:text-stone-400 transition"
+            title="刷新行情 (免翻墙实时更新)"
+            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-stone-500 dark:text-stone-400 transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${prices.loading ? 'animate-spin' : ''}`} />
           </button>
