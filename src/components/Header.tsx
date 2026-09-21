@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Moon, Sun, RefreshCw, Compass, CheckCircle2 } from 'lucide-react';
+import { Moon, Sun, RefreshCw, Compass, CheckCircle2 } from 'lucide-react';
 import { CryptoPrices } from '../types';
 import { fetchLiveCryptoPrices, loadCachedPrices } from '../utils/cryptoPrice';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
-  searchFilter: string;
-  setSearchFilter: (v: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   theme,
   toggleTheme,
-  searchFilter,
-  setSearchFilter,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchEngine, setSearchEngine] = useState<'baidu' | 'google' | 'bing'>('baidu');
   const [prices, setPrices] = useState<CryptoPrices>(() => loadCachedPrices());
   const [refreshSuccess, setRefreshSuccess] = useState(false);
 
@@ -41,44 +35,30 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const handleWebSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const query = searchQuery.trim();
-    if (!query) return;
-
-    const urls = {
-      baidu: `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`,
-      google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-      bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
-    };
-
-    window.open(urls[searchEngine], '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <header
       id="header-nav"
-      className="sticky top-0 z-50 px-4 py-3 md:px-8 transition-colors backdrop-blur-xl border-b"
+      className="sticky top-0 z-40 px-4 py-2.5 md:px-8 transition-colors backdrop-blur-xl border-b"
       style={{
         backgroundColor: 'var(--bg-sidebar)',
         borderColor: 'var(--border-color)',
       }}
     >
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         {/* Logo */}
         <a
           href="#"
           id="logo-brand"
-          className="flex items-center gap-2 text-xl md:text-2xl font-bold tracking-tight text-emerald-800 dark:text-emerald-300"
+          className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight text-emerald-800 dark:text-emerald-300 shrink-0"
         >
-          <Compass className="w-7 h-7 text-lime-600 dark:text-lime-400 animate-spin-slow" />
+          <Compass className="w-6 h-6 md:w-7 md:h-7 text-lime-600 dark:text-lime-400 animate-spin-slow" />
           <span>南宫远区块链导航</span>
         </a>
 
         {/* Crypto Ticker Bar */}
         <div
           id="crypto-price-bar"
-          className="flex items-center gap-2 md:gap-3 flex-wrap text-xs md:text-sm"
+          className="hidden md:flex items-center gap-2 lg:gap-3 text-xs md:text-sm"
         >
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border"
@@ -127,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md border"
             style={{
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border-color)',
@@ -143,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             title="点击前往 CoinGlass 查看深度衍生品与爆仓数据 (国内已通过服务代理直连，无需翻墙)"
-            className="hidden xl:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-lime-600/30 dark:border-lime-400/30 text-lime-800 dark:text-lime-300 hover:bg-black/5 dark:hover:bg-white/10 transition"
+            className="hidden lg:inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-lime-600/30 dark:border-lime-400/30 text-lime-800 dark:text-lime-300 hover:bg-black/5 dark:hover:bg-white/10 transition"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>CoinGlass数据</span>
@@ -170,53 +150,28 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Search Bar + Controls */}
-        <div className="flex items-center gap-2 w-full lg:w-auto flex-1 lg:flex-initial justify-end">
-          {/* External Web Search Form */}
-          <form
-            id="search-web-form"
-            onSubmit={handleWebSearch}
-            className="flex items-center rounded-full border px-2 py-1 shadow-sm flex-1 max-w-md"
+        {/* Right Controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile Refresh Button */}
+          <button
+            id="mobile-refresh-price-btn"
+            onClick={fetchPrices}
+            title="刷新行情"
+            className="md:hidden p-1.5 rounded-lg border text-stone-500 transition"
             style={{
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border-color)',
             }}
           >
-            <Search className="w-4 h-4 ml-1 text-stone-400 shrink-0" />
-            <input
-              id="search-web-input"
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜索网络或输入关键字..."
-              className="w-full bg-transparent px-2 text-xs md:text-sm focus:outline-none placeholder:text-stone-400"
-            />
-            <select
-              id="search-engine-select"
-              value={searchEngine}
-              onChange={(e) => setSearchEngine(e.target.value as 'baidu' | 'google' | 'bing')}
-              className="bg-transparent text-xs font-medium text-stone-600 dark:text-stone-300 cursor-pointer border-l pl-2 pr-1 py-0.5 outline-none"
-              style={{ borderColor: 'var(--border-color)' }}
-            >
-              <option value="baidu" className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100">百度</option>
-              <option value="google" className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100">Google</option>
-              <option value="bing" className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-100">Bing</option>
-            </select>
-            <button
-              id="search-submit-button"
-              type="submit"
-              className="ml-1 px-3 py-1 text-xs rounded-full bg-lime-700 hover:bg-lime-800 dark:bg-lime-600 dark:hover:bg-lime-500 text-white font-medium transition cursor-pointer"
-            >
-              搜索
-            </button>
-          </form>
+            <RefreshCw className={`w-4 h-4 ${prices.loading ? 'animate-spin text-lime-600' : ''}`} />
+          </button>
 
           {/* Theme Toggle Button */}
           <button
             id="theme-toggle-button"
             onClick={toggleTheme}
             aria-label="切换明暗主题"
-            className="w-9 h-9 flex items-center justify-center rounded-lg border shadow-sm transition hover:scale-105"
+            className="w-9 h-9 flex items-center justify-center rounded-lg border shadow-sm transition hover:scale-105 cursor-pointer"
             style={{
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border-color)',
