@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Moon, Sun, RefreshCw, Compass } from 'lucide-react';
+import { Search, Moon, Sun, RefreshCw, Compass, CheckCircle2 } from 'lucide-react';
 import { CryptoPrices } from '../types';
+import { fetchLiveCryptoPrices, loadCachedPrices } from '../utils/cryptoPrice';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
@@ -17,87 +18,26 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchEngine, setSearchEngine] = useState<'baidu' | 'google' | 'bing'>('baidu');
-  const [prices, setPrices] = useState<CryptoPrices>({
-    btcPrice: '-',
-    ethPrice: '-',
-    ethBtcPrice: '-',
-    loading: true,
-  });
+  const [prices, setPrices] = useState<CryptoPrices>(() => loadCachedPrices());
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   const fetchPrices = async () => {
+    setPrices((prev) => ({ ...prev, loading: true }));
     try {
-      setPrices((prev) => ({ ...prev, loading: true }));
-
-      // 1. First priority: Fetch via our server-side proxy /api/prices (No VPN required for users in China)
-      try {
-        const proxyRes = await fetch('/api/prices', { signal: AbortSignal.timeout(6000) });
-        if (proxyRes.ok) {
-          const json = await proxyRes.json();
-          if (json.success && json.data) {
-            setPrices({
-              btcPrice: json.data.btcPrice,
-              ethPrice: json.data.ethPrice,
-              ethBtcPrice: json.data.ethBtcPrice,
-              btcChange24h: json.data.btcChange24h,
-              ethChange24h: json.data.ethChange24h,
-              source: json.data.source || 'CoinGlass',
-              lastUpdated: new Date(),
-              loading: false,
-            });
-            return;
-          }
-        }
-      } catch {
-        // Fallback to direct client fetch if proxy is temporarily unreachable
-      }
-
-      // 2. Direct fallback (for overseas or local environments)
-      const [btcRes, ethRes] = await Promise.all([
-        fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT', { signal: AbortSignal.timeout(5000) }),
-        fetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT', { signal: AbortSignal.timeout(5000) }),
-      ]);
-
-      if (!btcRes.ok || !ethRes.ok) throw new Error('Network response failed');
-
-      const btcData = await btcRes.json();
-      const ethData = await ethRes.json();
-
-      let btcPriceStr = '-';
-      let ethPriceStr = '-';
-      let ethBtcStr = '-';
-
-      if (btcData.data && btcData.data[0]) {
-        const btc = parseFloat(btcData.data[0].last);
-        btcPriceStr = '$' + btc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      }
-
-      if (ethData.data && ethData.data[0]) {
-        const eth = parseFloat(ethData.data[0].last);
-        ethPriceStr = '$' + eth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (btcData.data && btcData.data[0]) {
-          const btcVal = parseFloat(btcData.data[0].last);
-          if (btcVal > 0) {
-            ethBtcStr = (eth / btcVal).toFixed(6) + ' BTC';
-          }
-        }
-      }
-
-      setPrices({
-        btcPrice: btcPriceStr,
-        ethPrice: ethPriceStr,
-        ethBtcPrice: ethBtcStr,
-        source: 'CoinGlass',
-        lastUpdated: new Date(),
-        loading: false,
-      });
+      const live = await fetchLiveCryptoPrices();
+      setPrices(live);
+      setRefreshSuccess(true);
+      setTimeout(() => setRefreshSuccess(false), 2000);
     } catch {
       setPrices((prev) => ({ ...prev, loading: false }));
     }
   };
 
   useEffect(() => {
+    // Immediate background fetch on mount
     fetchPrices();
-    const interval = setInterval(fetchPrices, 30000);
+    // Auto refresh every 20 seconds
+    const interval = setInterval(fetchPrices, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -209,14 +149,25 @@ export const Header: React.FC<HeaderProps> = ({
             <span>CoinGlass数据</span>
           </a>
 
-          <button
-            id="refresh-price-btn"
-            onClick={fetchPrices}
-            title="刷新行情 (免翻墙实时更新)"
-            className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 text-stone-500 dark:text-stone-400 transition cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${prices.loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="relative flex items-center">
+            <button
+              id="refresh-price-btn"
+              onClick={fetchPrices}
+              title={`点击刷新行情 (数据源: ${prices.source || '聚合行情'}, 上次更新: ${prices.lastUpdated ? new Date(prices.lastUpdated).toLocaleTimeString() : '刚刚'})`}
+              className="p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-stone-500 dark:text-stone-400 transition cursor-pointer flex items-center gap-1"
+            >
+              {refreshSuccess ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              ) : (
+                <RefreshCw className={`w-3.5 h-3.5 ${prices.loading ? 'animate-spin text-lime-600 dark:text-lime-400' : ''}`} />
+              )}
+            </button>
+            {refreshSuccess && (
+              <span className="absolute -bottom-6 right-0 text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded shadow whitespace-nowrap z-50 pointer-events-none">
+                已更新
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Search Bar + Controls */}
