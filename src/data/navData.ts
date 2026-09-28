@@ -17,7 +17,7 @@ export const CATEGORIES_DATA: CategoryData[] = [
       { title: 'Cloudflare', url: 'https://dash.cloudflare.com/', desc: 'CDN与网络安全服务' },
       { title: 'Gmail', url: 'https://mail.google.com/', desc: '谷歌邮箱' },
       { title: 'Google Keep', url: 'https://keep.google.com/u/0/#home', desc: '谷歌云笔记备忘' },
-      { title: 'IP.im', url: 'https://ip.im/', desc: 'IP地址查询工具' }
+      { title: '抖音下载器', url: 'https://savetik.co/zh-cn/douyin-downloader', desc: '无水印抖音视频高清下载工具' }
     ]
   },
   {
