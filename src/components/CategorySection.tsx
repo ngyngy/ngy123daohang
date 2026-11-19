@@ -4,12 +4,12 @@ import { CategoryData } from '../types';
 
 interface CategorySectionProps {
   category: CategoryData;
-  filterQuery: string;
+  filterQuery?: string;
 }
 
 export const CategorySection: React.FC<CategorySectionProps> = ({
   category,
-  filterQuery,
+  filterQuery = '',
 }) => {
   const filteredItems = category.items.filter((item) => {
     if (!filterQuery) return true;
